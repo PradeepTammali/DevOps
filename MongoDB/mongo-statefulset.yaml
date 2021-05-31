@@ -1,0 +1,97 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRoleBinding
+metadata:
+  name: mongodb-view
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: view
+subjects:
+  - kind: ServiceAccount
+    name: default
+    namespace: mongodb
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mongo
+  namespace: mongodb
+  labels:
+    name: mongo
+spec:
+  ports:
+  - port: 27017
+    targetPort: 27017
+  clusterIP: None
+  selector:
+    role: mongo
+---
+apiVersion: apps/v1beta1
+kind: StatefulSet
+metadata:
+  name: mongo
+  namespace: mongodb
+spec:
+  serviceName: "mongo"
+  replicas: 3
+  template:
+    metadata:
+      labels:
+        role: mongo
+        environment: test
+    spec:
+      terminationGracePeriodSeconds: 10
+      containers:
+        - name: mongo
+          image: mongo:4.0
+#          env:
+#            - name: MONGO_INITDB_ROOT_USERNAME
+#              value: "root"
+#            - name: MONGO_INITDB_ROOT_PASSWORD
+#              value: "root"
+          command:
+            - mongod
+            - "--wiredTigerCacheSizeGB"
+            - "0.25"
+            - "--bind_ip"
+            - 0.0.0.0
+            - "--replSet"
+            - rs0
+            - "--smallfiles"
+            - "--noprealloc"
+          ports:
+            - containerPort: 27017
+          volumeMounts:
+            - name: mongo-persistent-storage
+              mountPath: /data/db
+          resources:
+            requests:
+              cpu: 1
+              memory: 2Gi
+        - name: mongo-sidecar
+          image: cvallance/mongo-k8s-sidecar
+          env:
+            - name: MONGO_SIDECAR_POD_LABELS
+              value: "role=mongo,environment=test"
+            - name: KUBE_NAMESPACE
+              value: "mongodb"
+            - name: KUBERNETES_MONGO_SERVICE_NAME
+              value: "mongo"
+#            - name: MONGODB_USERNAME
+#              value: "root"
+#            - name: MONGODB_PASSWORD
+#              value: "root"
+#            - name: MONGODB_DATABASE
+#              value: "admin"
+  volumeClaimTemplates:
+  - metadata:
+      name: mongo-persistent-storage
+      annotations:
+        volume.beta.kubernetes.io/storage-class: "mongodb"
+    spec:
+      accessModes: [ "ReadWriteMany" ]
+      storageClassName: mongodb
+      resources:
+        requests:
+          storage: 2Gi

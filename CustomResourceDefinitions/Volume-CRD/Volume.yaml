@@ -1,0 +1,9 @@
+apiVersion: pradeep.k8s.io/v1alpha1
+kind: Volume
+metadata:
+  name: TestVolume
+spec:
+  type: MapR
+  size: 50G
+  volumeType: RW
+  volumeEncryption: true

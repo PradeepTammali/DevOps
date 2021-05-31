@@ -1,0 +1,63 @@
+# Deprecated in v1.16 in favor of apiextensions.k8s.io/v1
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  # name must match the spec fields below, and be in the form: <plural>.<group>
+  name: volumes.pradeep.k8s.io
+spec:
+  # group name to use for REST API: /apis/<group>/<version>
+  group: pradeep.k8s.io
+  # list of versions supported by this CustomResourceDefinition
+  versions:
+    - name: v1alpha1
+      # Each version can be enabled/disabled by Served flag.
+      served: true
+      # One and only one version must be marked as the storage version.
+      storage: true
+  # either Namespaced or Cluster
+  scope: Cluster
+  names:
+    # plural name to be used in the URL: /apis/<group>/<version>/<plural>
+    plural: volumes
+    # singular name to be used as an alias on the CLI and for display
+    singular: volume
+    # kind is normally the CamelCased singular type. Your resource manifests use this.
+    kind: Volume
+    # shortNames allow shorter string to match your resource on the CLI
+    shortNames:
+    - vol
+    listkind: VolumeList
+  validation:
+    openAPIV3Schema:
+      required: ["spec"]
+      properties:
+        spec:
+          required: ["type", "size", "volumeType", "volumeEncryption"]
+          # volumeName -- name of the volume 
+          # type -- type of storage MapR or QuoByte -- currrenlty only MapR
+          # size -- size of the volume in GBs. - similar to PV
+          # volumeType -- (R, W or RW) Read Only or Write Only or Read and Write
+          # volumeEncryption -- boolean -- true or false
+          properties:
+#            volumeName:
+#              type: string
+#              pattern: ^[0-9a-zA-Z\.\_\-]{1,90}$
+            volumeType:
+              enum:
+              - R
+              - W
+              - RW
+              type: string
+#              pattern: ^(R|W|RW)$
+            volumeEncryption:
+              type: boolean
+            type:
+              type: string
+              enum:
+              - MapR
+              - QuoByte
+#              pattern: ^(MapR|QuoByte)$
+            size:
+              type: string 
+              pattern: ^[0-9]+(M|G|T)$
+

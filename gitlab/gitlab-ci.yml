@@ -1,0 +1,12 @@
+image: docker:stable
+
+before_script:
+  - docker info
+
+stages:
+  - Build dev image
+
+dev docker build:
+  stage: Build dev image
+  script:
+  - docker build -t api_gateway:v1 . --build-arg rootpass="$ROOT_PASSWORD"

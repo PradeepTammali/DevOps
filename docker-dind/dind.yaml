@@ -1,0 +1,61 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: dind
+  labels:
+    app: dind
+    core: "false"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: dind
+  template:
+    metadata:
+      labels:
+        app: dind
+    spec:
+      containers:
+        - name: dind
+          image: docker:18.05-dind
+          lifecycle:
+            postStart:
+              exec:
+                command: ["/bin/sh", "-c", "mkdir -p /etc/docker/certs.d/${DOCKER_REGISTRY}/ && ln -s /certs/server.crt /etc/docker/certs.d/${DOCKER_REGISTRY}/domain.crt"]
+          env:
+          - name: DOCKER_REGISTRY
+            value: "docker.registry.com:30100"
+          ports:
+          - containerPort: 2375
+            name: http
+          securityContext:
+            privileged: true
+          volumeMounts:
+            - name: dind-storage
+              mountPath: /var/lib/docker
+            - name: certs
+              mountPath: "/certs/server.crt"
+              subPath: "server.crt"
+      volumes:
+        - name: dind-storage
+          emptyDir: {}
+        - name: certs
+          configMap:
+            name: registry-certs
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: dind
+  labels:
+    app: dind
+    core: "false"
+spec:
+  type: ClusterIP
+  selector:
+    app: dind
+  ports:
+    - protocol: TCP
+      port: 2375
+      targetPort: 2375

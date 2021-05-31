@@ -1,0 +1,38 @@
+FROM node:10
+
+WORKDIR /home/pradeepadm/scullog
+
+# Root password argument passed at build time
+ARG rootpass
+
+# Assigining Root a password
+RUN echo "root:$rootpass" | chpasswd
+
+# Creating a new user "pradeepadm"
+RUN groupadd -g 515151 pradeep_platformadm && \
+    useradd -u 121254 -g pradeep_platformadm -d /home/pradeepadm -s /bin/bash -c "Docker image user" pradeepadm
+
+RUN chown -R pradeepadm:pradeep_platformadm /home/pradeepadm
+
+RUN apt-get update && apt-get install -y sudo
+
+COPY script.sh /home/pradeepadm/script.sh
+RUN chmod 777 /home/pradeepadm/script.sh
+
+# Giving permission to pradeepadm to restart redis server
+#RUN echo 'pradeepadm ALL= NOPASSWD: ALL' >> /etc/sudoers
+
+USER pradeepadm
+
+# Installing scullog module
+RUN npm install scullog
+
+# run on  0.0.0.0
+RUN sed -i -e "s*127.0.0.1*0.0.0.0*g"  /home/pradeepadm/scullog/node_modules/scullog/server/index.js
+
+#RUN echo "#!/bin/bash" >> /home/pradeepadm/script.sh
+#RUN echo "sudo scullog -d /home/pradeepadm/scullog/" >> /home/pradeepadm/script.sh
+
+EXPOSE 8080
+
+CMD ["/home/pradeepadm/script.sh"]

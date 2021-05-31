@@ -1,0 +1,9 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: k8s-dashboard-ing
+  namespace: kubernetes-dashboard
+spec:
+  backend:
+    serviceName: k8s-dashboard-service
+    servicePort: 30001

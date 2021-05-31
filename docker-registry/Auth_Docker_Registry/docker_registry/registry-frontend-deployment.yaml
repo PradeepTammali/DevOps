@@ -1,0 +1,61 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    kompose.cmd: kompose convert
+    kompose.version: 1.16.0 (0c01309)
+  labels:
+    io.kompose.service: registry-frontend
+  name: registry-frontend
+spec:
+  ports:
+  - name: http
+    protocol: TCP
+    port: 30010
+    targetPort: 80
+  selector:
+    io.kompose.service: registry-frontend
+  type: LoadBalancer
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  annotations:
+    layer: L4
+    protocol: tcp
+  name: registry-frontend
+spec:
+  backend:
+    serviceName: registry-frontend
+    servicePort: 30010
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose convert
+    kompose.version: 1.16.0 (0c01309)
+  labels:
+    io.kompose.service: registry-frontend
+  name: registry-frontend
+spec:
+  replicas: 1
+  strategy: {}
+  template:
+    metadata:
+      labels:
+        io.kompose.service: registry-frontend
+    spec:
+      containers:
+      - env:
+        - name: ENV_DOCKER_REGISTRY_HOST
+          value: https://137.58.180.216
+        - name: ENV_DOCKER_REGISTRY_PORT
+          value: "30009"
+        image: konradkleine/docker-registry-frontend:v2
+        name: registry-frontend
+        ports:
+        - containerPort: 80
+        resources: {}
+      restartPolicy: Always

@@ -1,0 +1,109 @@
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    io.kompose.service: registry
+  name: registry
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      io.kompose.service: registry
+  template:
+    metadata:
+      labels:
+        io.kompose.service: registry
+    spec:
+      containers:
+      - env:
+        - name: REGISTRY_AUTH
+          value: token
+        - name: REGISTRY_HTTP_ADDR
+          value: 0.0.0.0:5000
+        - name: REGISTRY_HTTP_TLS_CERTIFICATE
+          value: /certs/server.crt
+        - name: REGISTRY_HTTP_TLS_KEY
+          value: /certs/server.key
+        - name: REGISTRY_AUTH_TOKEN_ROOTCERTBUNDLE
+          value: /certs/trust_chain.pem
+        - name: REGISTRY_AUTH_TOKEN_ISSUER
+          value: http://137.58.180.216:30005/auth/realms/docker-registry
+        - name: REGISTRY_AUTH_TOKEN_REALM
+          value: http://137.58.180.216:30005/auth/realms/docker-registry/protocol/docker-v2/auth
+        - name: REGISTRY_AUTH_TOKEN_SERVICE
+          value: docker-registry-test
+        image: registry:2
+        name: registry
+        resources: {}
+        ports:
+        - containerPort: 5000
+          name: registry
+        volumeMounts:
+        - mountPath: /var/lib/registry/
+          name: data
+        - name: registry-cert-cm
+          mountPath: /certs/server.crt
+          subPath: server.crt
+          readOnly: false
+        - name: registry-key-cm
+          mountPath: /certs/server.key
+          subPath: server.key
+          readOnly: false
+        - name: trust-chain-pem-cm
+          mountPath: /certs/trust_chain.pem
+          subPath: trust_chain.pem
+          readOnly: false
+      restartPolicy: Always
+      volumes:
+      - name: data
+        hostPath:
+          path: /tmp/docker-registry/data
+      - name: registry-cert-cm
+        configMap:
+          name: registry-crt
+      - name: registry-key-cm
+        configMap:
+          name: registry-key
+      - name: trust-chain-pem-cm
+        configMap:
+          name: trust-chain-pem
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: docker-registry
+spec:
+  ports:
+  - name: http
+    port: 30009
+    protocol: TCP
+    targetPort: 5000
+  selector:
+    io.kompose.service: registry
+  type: LoadBalancer
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  annotations:
+    layer: L4
+    protocol: tcp
+  name: docker-registry
+spec:
+  backend:
+    serviceName: docker-registry
+    servicePort: 30009
+#---
+#apiVersion: v1
+#kind: Service
+#metadata:
+#  name: docker-registry
+#spec:
+#  ports:
+#  - port: 5000
+#  selector:
+#    io.kompose.service: registry
+#  clusterIP: None

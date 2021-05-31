@@ -1,0 +1,10 @@
+apiVersion: pradeep.k8s.io/v1alpha1
+kind: MapRTicket
+metadata:
+  name: mapr-ticket-secret
+spec:
+  UserID: 
+  UserName: 
+  GroupID: 
+  GroupName: 
+  Password: 

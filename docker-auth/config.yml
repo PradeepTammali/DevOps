@@ -1,0 +1,28 @@
+version: 0.1
+log:
+  fields:
+    service: registry
+storage:
+    cache:
+        blobdescriptor: inmemory
+    filesystem:
+        rootdirectory: /data
+http:
+    addr: :5000
+    headers:
+        X-Content-Type-Options: [nosniff]
+    tls:
+      certificate: /opt/certs/server.crt
+      key: /opt/certs/server.key
+health:
+  storagedriver:
+    enabled: true
+    interval: 10s
+    threshold: 3
+auth:
+  token:
+    realm: "https://docker.registry.com:30005/auth"
+    service: "my.docker.registry"
+    issuer: "Acme auth server"
+    rootcertbundle: /opt/certs/server.crt
+

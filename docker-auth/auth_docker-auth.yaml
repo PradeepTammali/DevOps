@@ -1,0 +1,92 @@
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  annotations:
+    layer: L4
+    protocol: tcp
+  name: docker-auth
+spec:
+  backend:
+    serviceName: docker-auth
+    servicePort: 30005
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: docker-auth
+spec:
+  ports:
+  - port: 30005
+    name: http
+    protocol: TCP
+    targetPort: 5001
+  selector:
+    io.kompose.service: auth
+  type: LoadBalancer
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose convert
+    kompose.version: 1.16.0 (0c01309)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: auth
+  name: auth
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        io.kompose.service: auth
+    spec:
+      containers:
+      - args:
+        - "-v=5" 
+        - "-alsologtostderr=true"
+        - "-log_dir=/logs"
+        - /config/auth_config.yml
+        image: cesanta/docker_auth:latest
+        name: auth
+        resources: {}
+        ports:
+        - containerPort: 5001
+          name: auth
+        volumeMounts:
+        - mountPath: /config
+          name: config
+          readOnly: true
+        - mountPath: /logs
+          name: logs
+        - mountPath: /tmp
+          name: pass
+        - name: registry-cert-cm
+          mountPath: /certs/server.crt
+          subPath: server.crt
+          readOnly: true
+        - name: registry-key-cm
+          mountPath: /certs/server.key
+          subPath: server.key
+          readOnly: true
+      restartPolicy: Always
+      volumes:
+      - name: config
+        hostPath:
+          path: /tmp/docker-registry/auth/config
+      - name: logs
+        hostPath:
+          path: /tmp/docker-registry/auth/logs
+      - name: pass
+        hostPath:
+          path: /tmp/docker-registry/auth/pass
+      - name: registry-cert-cm
+        configMap:
+          name: registry-crt
+      - name: registry-key-cm
+        configMap:
+          name: registry-key

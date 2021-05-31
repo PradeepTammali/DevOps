@@ -1,0 +1,18 @@
+#!/bin/bash
+if [ $# -ne 2 ];
+    then
+    echo "PLEASE PROVIDE NAMESPACE AS A ARGUMENT"
+    echo -e "sh contextrc <namespace_give_during_deployment>\n"
+    echo -e "\tex: sh contextrc user mynamespace\n"
+    exit
+fi
+
+cer_path=$PWD/context/$1/$1.crt
+key_path=$PWD/context/$1/$1.key
+echo "$cer_path,$key_path"
+kubectl config --kubeconfig=$1-config set-cluster $1-cluster --server=https://10.137.110.58:6443 --insecure-skip-tls-verify
+kubectl config --kubeconfig=$1-config set-credentials $1 --client-certificate=$cer_path --client-key=$key_path
+kubectl config --kubeconfig=$1-config set-context $1-context --cluster=$1-cluster --namespace=$2 --user=$1
+kubectl config --kubeconfig=$1-config use-context $1-context
+#export KUBECONFIG=/home/context/$1/$1-config
+

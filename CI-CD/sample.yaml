@@ -1,0 +1,87 @@
+---
+kind: Service
+spec:
+  type: LoadBalancer
+  ports:
+  - protocol: TCP
+    name: http
+    port: 30050
+    targetPort: 8888
+  selector:
+    app: sample
+apiVersion: v1
+metadata:
+  name: sample
+---
+kind: Deployment
+spec:
+  template:
+    spec:
+      volumes:
+      containers:
+      - command:
+        - "/home/pradeepadm/startup_sample.sh"
+        name: sample
+#        securityContext:
+#          privileged: true
+        image: docker.registry.com:5000/sample:v2.2
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        volumeMounts:
+        - mountPath: "/home/pradeepadm/logs/"
+          name: logs
+        - mountPath: "/home/pradeepadm/myconfig/"
+          name: myconfig
+        - mountPath: "/home/pradeepadm/sample/"
+          name: code
+        ports:
+        - containerPort: 8888
+#        readinessProbe:
+#          httpGet:
+#            path: /test
+#            scheme: HTTPS
+#            port: 8888
+#          initialDelaySeconds: 5
+#          periodSeconds: 20
+#        livenessProbe:
+#          httpGet:
+#            path: /test
+#            scheme: HTTPS
+#            port: 8888
+#          initialDelaySeconds: 5
+#          periodSeconds: 20
+#        resources:
+#          requests:
+#            cpu: 2
+#            memory: 2Gi
+#          limits:
+#            cpu: '2'
+#            memory: 2Gi
+      tolerations:
+      - key: "node-role.kubernetes.io/master"
+        operator: "Equal"
+        value : "value"
+        effect: "NoSchedule"
+    metadata:
+      labels:
+        app: sample
+  replicas: 1
+apiVersion: extensions/v1beta1
+metadata:
+  name: sample
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: sample-ingress
+  annotations:
+    protocol: tcp
+    layer: L4
+spec:
+  backend:
+   serviceName: sample
+   servicePort: 30050

@@ -1,0 +1,55 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jupyter-notebook
+  labels:
+    app: jupyter-notebook
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: jupyter-notebook
+  template:
+    metadata:
+      labels:
+        app: jupyter-notebook
+    spec:
+      containers:
+      - name: minimal-notebook
+        image: jupyter/minimal-notebook:latest
+        ports:
+        - containerPort: 8888
+        volumeMounts:
+        - mountPath: /home/jovyan/work
+          name: data
+      volumes:
+        - hostPath:
+            path: /home/pradeep/scripts/Bynk
+          name: data
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: jupyter-notebook
+spec:
+  type: LoadBalancer
+  selector:
+    app: jupyter-notebook
+  ports:
+  - protocol: TCP
+    name: http
+    port: 30020
+    targetPort: 8888
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: jupyter-notebook
+  annotations:
+    protocol: tcp
+    layer: L4
+spec:
+  backend:
+   serviceName: jupyter-notebook
+   servicePort: 30020

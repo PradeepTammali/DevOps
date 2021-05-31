@@ -1,0 +1,86 @@
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    app: phpldapadmin
+  name: phpldapadmin
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: phpldapadmin
+  template:
+    metadata:
+      labels:
+        app: phpldapadmin
+    spec:
+      containers:
+      - image: osixia/phpldapadmin:0.7.1
+        imagePullPolicy: IfNotPresent
+        name: phpldapadmin
+        ports:
+        - containerPort: 80
+          name: http
+          protocol: TCP
+#        - containerPort: 443
+#          name: https
+#          protocol: TCP
+        env:
+        - name: PHPLDAPADMIN_LDAP_HOSTS
+          value: openldap
+        - name: PHPLDAPADMIN_HTTPS
+          value: "false"
+#        - name: PHPLDAPADMIN_HTTPS_CRT_FILENAME
+#          value: "server.crt"
+#        - name: PHPLDAPADMIN_HTTPS_KEY_FILENAME
+#          value: "server.key"
+#        volumeMounts:
+#        - name: registry-cert-cm
+#          mountPath: /container/service/phpldapadmin/assets/apache2/certs/server.crt
+#          subPath: server.crt
+#        - name: registry-key-cm
+#          mountPath: /container/service/phpldapadmin/assets/apache2/certs/server.key
+#          subPath: server.key
+#      volumes:
+#      - name: registry-cert-cm
+#        configMap:
+#          name: registry-crt
+#          defaultMode: 0777
+#      - name: registry-key-cm
+#        configMap:
+#          name: registry-key
+#          defaultMode: 0777
+#        resources:
+#          limits:
+#            cpu: "1"
+#            memory: 1Gi
+#          requests:
+#            cpu: "0.5"
+#            memory: 0.5Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: phpldapadmin
+spec:
+  ports:
+  - name: http
+    port: 30007
+    protocol: TCP
+    targetPort: 80
+  selector:
+    app: phpldapadmin
+  type: LoadBalancer
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  annotations:
+    layer: L4
+    protocol: tcp
+  name: phpldapadmin
+spec:
+  backend:
+    serviceName: phpldapadmin
+    servicePort: 30007

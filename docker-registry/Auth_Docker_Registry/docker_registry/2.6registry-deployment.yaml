@@ -1,0 +1,127 @@
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose convert
+    kompose.version: 1.16.0 (0c01309)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: registry
+  name: registry
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        io.kompose.service: registry
+    spec:
+      containers:
+      - args:
+        - /bin/sh
+        - /etc/docker/registry/init
+        env:
+        - name: REGISTRY_AUTH
+          value: token
+        - name: REGISTRY_AUTH_TOKEN_ISSUER
+          value: http://137.58.180.216:30005/auth/realms/docker-registry
+        - name: REGISTRY_AUTH_TOKEN_REALM
+          value: http://137.58.180.216:30005/auth/realms/docker-registry/protocol/docker-v2/auth
+        - name: REGISTRY_AUTH_TOKEN_ROOTCERTBUNDLE
+          value: /certs/trust_chain.pem
+        - name: REGISTRY_AUTH_TOKEN_SERVICE
+          value: docker-registry-test
+        - name: REGISTRY_HTTP_TLS_CERTIFICATE
+          value: /certs/server.crt
+        - name: REGISTRY_HTTP_TLS_KEY
+          value: /certs/server.key
+        - name: REGISTRY_LOG_LEVEL
+          value: debug
+        - name: REGISTRY_HTTP_SECRET
+          value: httpsecret
+        - name: REGISTRY_STORAGE_DELETE_ENABLED
+          value: "true"
+#        - name: REGISTRY_HTTP_HOST
+#          value: https://137.58.180.216
+        image: registry:2.6
+        name: registry
+        ports:
+        - containerPort: 5000
+        - containerPort: 5001
+        resources: {}
+        volumeMounts:
+        - mountPath: /var/lib/registry/
+          name: data
+        - name: registry-cert-cm
+          mountPath: /certs/server.crt
+          subPath: server.crt
+          readOnly: true
+        - name: registry-key-cm
+          mountPath: /certs/server.key
+          subPath: server.key
+          readOnly: true
+        - name: trust-chain-pem-cm
+          mountPath: /certs/trust_chain.pem
+          subPath: trust_chain.pem
+          readOnly: true
+        - mountPath: /etc/docker/registry/config.yml
+          subPath: config.yml
+          name: config
+          readOnly: true
+        - mountPath: /etc/docker/registry/init
+          subPath: init
+          name: initfile
+          readOnly: true
+      restartPolicy: Always
+      volumes:
+      - name: data
+        hostPath:
+          path: /tmp/portus/docker-registry/data
+      - name: registry-cert-cm
+        configMap:
+          name: registry-crt
+      - name: registry-key-cm
+        configMap:
+          name: registry-key
+      - name: trust-chain-pem-cm
+        configMap:
+          name: trust-chain-pem
+      - name: config
+        hostPath:
+          path: /tmp/portus/docker-registry/
+      - name: initfile
+        hostPath:
+          path: /tmp/portus/docker-registry/
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: docker-registry
+spec:
+  ports:
+  - name: http
+    port: 30009
+    protocol: TCP
+    targetPort: 5000
+  - name: auth
+    port: 30008
+    protocol: TCP
+    targetPort: 5001
+  selector:
+    io.kompose.service: registry
+  type: LoadBalancer
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  annotations:
+    layer: L4
+    protocol: tcp
+  name: docker-registry
+spec:
+  backend:
+    serviceName: docker-registry
+    servicePort: 30009

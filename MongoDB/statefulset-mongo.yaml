@@ -1,0 +1,205 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: mongodb
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: mongodb
+  namespace: mongodb
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: mongodb
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - endpoints
+  - persistentvolumeclaims
+  - persistentvolumeclaims/status
+  - pods
+  - replicationcontrollers
+  - replicationcontrollers/scale
+  - serviceaccounts
+  - services
+  - services/status
+  verbs:
+  - get
+  - list
+  - watch
+  - patch
+  - create
+  - delete
+- apiGroups:
+  - ""
+  resources:
+  - bindings
+  - events
+  - limitranges
+  - namespaces/status
+  - pods/log
+  - pods/status
+  - replicationcontrollers/status
+  - resourcequotas
+  - resourcequotas/status
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - statefulsets
+  - statefulsets/scale
+  - statefulsets/status
+  verbs:
+  - get
+  - list
+  - watch
+---
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRoleBinding
+metadata:
+  name: mongodb
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: mongodb
+subjects:
+  - kind: ServiceAccount
+    name: mongodb
+    namespace: mongodb
+---
+apiVersion: v1
+data:
+  label.sh: |
+    #!/bin/bash
+
+    # Check if file exists, if so, do not run the installation
+    if [[ ! -f /usr/local/bin/kubectl ]]; then
+            apt update && apt install curl -y && curl -LO https://storage.googleapis.com/kubernetes-release/release/`curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt`/bin/linux/amd64/kubectl && chmod +x ./kubectl && mv ./kubectl /usr/local/bin/kubectl
+    fi
+
+    while :
+    do
+            if [[ $(mongo --quiet --eval "printjson(db.isMaster().ismaster)") == "true" ]]; then
+                    # Label the pod with primary
+                    kubectl label --overwrite pod ${HOSTNAME} mongo.node=primary
+            elif [[ $(mongo --quiet --eval "printjson(db.isMaster().secondary)") == "true" ]]; then
+                    # Label the pod with secondary
+                    kubectl label --overwrite pod ${HOSTNAME} mongo.node=secondary
+            else
+                    # Label the pod with unknown
+                    kubectl label --overwrite pod ${HOSTNAME} mongo.node=unknown
+            fi
+            sleep 1m
+    done
+kind: ConfigMap
+metadata:
+  name: label
+  namespace: mongodb
+---
+apiVersion: v1
+data:
+  internal-auth-mongodb-keyfile: <base64 encoded key file>
+kind: Secret
+metadata:
+  name: shared-bootstrap-data
+  namespace: mongodb
+type: Opaque
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    name: mongo
+  name: mongo
+  namespace: mongodb
+spec:
+  ports:
+  - port: 27017
+    protocol: TCP
+    targetPort: 27017
+  selector:
+    mongo.node: primary
+    role: mongo
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mongo
+  namespace: mongodb
+spec:
+  serviceName: mongo
+  replicas: 4
+  selector:
+    matchLabels:
+      role: mongo
+      environment: dev
+      replicaset: rs0
+  template:
+    metadata:
+      labels:
+        role: mongo
+        environment: dev
+        replicaset: rs0
+    spec:
+      serviceAccountName: mongodb
+      containers:
+      - name: mongo
+        image: mongo:4.2
+        lifecycle:
+          postStart:
+            exec:
+              command: ["/bin/bash", "-c", "nohup bash /docker-entrypoint-initdb.d/label.sh > /proc/1/fd/1 2>&1 &" ]
+        command:
+        - "numactl"
+        - "--interleave=all"
+        - "mongod"
+        - "--bind_ip"
+        - "0.0.0.0"
+        - "--replSet"
+        - "rs0"
+        - "--auth"
+        - "--keyFile"
+        - "/etc/secrets-volume/internal-auth-mongodb-keyfile"
+#        resources:
+#          requests:
+#            cpu: 0.2
+#            memory: 200Mi
+        ports:
+        - containerPort: 27017
+        volumeMounts:
+        - name: secrets-volume
+          readOnly: true
+          mountPath: /etc/secrets-volume
+        - name: label-pods
+          mountPath: /docker-entrypoint-initdb.d/label.sh
+          subPath: label.sh
+        - name: mongo-persistent-storage
+          mountPath: /data/db
+      volumes:
+      - name: secrets-volume
+        secret:
+          secretName: shared-bootstrap-data
+          defaultMode: 256
+      - name: label-pods
+        configMap:
+          name: label
+          defaultMode: 0755
+  volumeClaimTemplates:
+  - metadata:
+      name: mongo-persistent-storage
+      annotations:
+        volume.beta.kubernetes.io/storage-class: "mongodb"
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      resources:
+        requests:
+          storage: 1Gi

@@ -1,0 +1,72 @@
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    app: openldap
+  name: openldap
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: openldap
+  template:
+    metadata:
+      labels:
+        app: openldap
+    spec:
+      containers:
+      - image: osixia/openldap:latest
+        imagePullPolicy: IfNotPresent
+        name: openldap
+        ports:
+        - containerPort: 636
+          name: https
+          protocol: TCP
+        - containerPort: 389
+          name: http
+          protocol: TCP
+        env:
+        - name: LDAP_ORGANISATION
+          value: "My Example Organization"
+        - name: LDAP_DOMAIN
+          value: "example.com"
+        - name: LDAP_ADMIN_PASSWORD
+          value: "admin"
+#        resources:
+#          limits:
+#            cpu: "1"
+#            memory: 1Gi
+#          requests:
+#            cpu: "0.5"
+#            memory: 0.5Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: openldap
+spec:
+  ports:
+  - name: http
+    port: 30004
+    protocol: TCP
+    targetPort: 389
+  - name: udp
+    port: 389
+    protocol: TCP
+    targetPort: 389
+  selector:
+    app: openldap
+  type: LoadBalancer
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  annotations:
+    layer: L4
+    protocol: tcp
+  name: openldap
+spec:
+  backend:
+    serviceName: openldap
+    servicePort: 30004

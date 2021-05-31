@@ -1,0 +1,83 @@
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose convert
+    kompose.version: 1.16.0 (0c01309)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: app
+  name: app
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        io.kompose.service: app
+    spec:
+      containers:
+      - image: jc21/nginx-proxy-manager:latest
+        name: app
+        ports:
+        - containerPort: 80
+        - containerPort: 81
+        - containerPort: 443
+        resources: {}
+        volumeMounts:
+        - mountPath: /app/config/production.json
+          name: config
+        - mountPath: /data
+          name: data
+        - mountPath: /etc/letsencrypt
+          name: encrypt
+      restartPolicy: Always
+      volumes:
+      - name: config
+        hostPath:
+          path: /tmp/proxy-manager/config.json
+      - name: data
+        hostPath:
+          path: /tmp/proxy-manager/data
+      - name: encrypt
+        hostPath:
+          path: /tmp/proxy-manager/letsencrypt
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    io.kompose.service: app
+  name: proxy-manager
+spec:
+  ports:
+  - name: http80
+    port: 30006
+    protocol: TCP
+    targetPort: 80
+  - name: http81
+    port: 30007
+    protocol: TCP
+    targetPort: 81
+  - name: http443
+    port: 30008
+    protocol: TCP
+    targetPort: 443
+  selector:
+    io.kompose.service: app
+  type: LoadBalancer
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  annotations:
+    layer: L4
+    protocol: tcp
+  name: proxy-manager
+spec:
+  backend:
+    serviceName: proxy-manager
+    servicePort: 30007

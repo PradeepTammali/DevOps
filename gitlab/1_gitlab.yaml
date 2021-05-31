@@ -1,0 +1,86 @@
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    app: gitlab
+  name: gitlab
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gitlab
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: gitlab
+    spec:
+      containers:
+      - image: gitlab/gitlab-ce:latest
+        imagePullPolicy: IfNotPresent
+        name: gitlab
+        ports:
+        - containerPort: 80
+          name: http
+          protocol: TCP
+        - containerPort: 9168
+          name: monitor
+          protocol: TCP
+        - containerPort: 22
+          name: ssh
+          protocol: TCP
+        resources:
+          limits:
+            cpu: "5"
+            memory: 10Gi
+          requests:
+            cpu: "4"
+            memory: 7Gi
+        volumeMounts:
+        - mountPath: /etc/gitlab
+          name: config
+        - mountPath: /var/log/gitlab
+          name: logs
+        - mountPath: /var/opt/gitlab
+          name: data
+      volumes:
+      - hostPath:
+          path: /tmp/gitlab/config
+        name: config
+      - hostPath:
+          path: /tmp/gitlab/logs
+        name: logs
+      - hostPath:
+          path: /tmp/gitlab/data
+        name: data
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gitlab
+spec:
+  ports:
+  - name: http
+    port: 30002
+    protocol: TCP
+    targetPort: 80
+  selector:
+    app: gitlab
+  type: LoadBalancer
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  annotations:
+    layer: L4
+    protocol: tcp
+  name: gitlab
+spec:
+  backend:
+    serviceName: gitlab
+    servicePort: 30002

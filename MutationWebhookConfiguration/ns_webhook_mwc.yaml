@@ -1,0 +1,22 @@
+---
+apiVersion: admissionregistration.k8s.io/v1beta1
+kind: MutatingWebhookConfiguration
+metadata:
+  name: namespace-webhook
+  labels:
+    app: namespace-webhook
+webhooks:
+  - name: pradeep.namespace.validation
+    clientConfig:
+      service:
+        name: webhook-adm
+        namespace: deep
+        path : "/nswebhook"
+      caBundle: <base64 encoded cert>
+    rules:
+      - operations: ["CREATE"]
+        apiGroups: ["", "extensions", "apps"]
+        apiVersions: ["v1"]
+        resources: ["namespaces"]
+    failurePolicy: Fail
+

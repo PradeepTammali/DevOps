@@ -1,0 +1,47 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: nginx
+spec:
+  backend:
+    serviceName: nginx
+    servicePort: 30873
+---
+kind: Service
+spec:
+  type: LoadBalancer
+  ports:
+  - protocol: TCP
+    port: 30873
+    name: nginx
+    targetPort: 80
+  selector:
+    app: nginx
+apiVersion: v1
+metadata:
+  name: nginx
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: nginx
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image:  nginx
+        ports:
+        - containerPort: 80
+#        resources:
+#          requests:
+#            cpu: '1'
+#            memory: 1Gi
+#          limits:
+#            cpu: '1'
+#            memory: 1Gi
+

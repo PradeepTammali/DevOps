@@ -1,0 +1,12 @@
+Instructions:
+
+1. This folder contains list of files to create nginx proxy manager for the docker registry.
+2. Create database pod first with help of db-deployment.yaml as following. TODO: Create statefulset or call with service name
+   kubectl create -f mysql.yaml -n gitlab 
+
+3. Please find the ip address of the pod or svc name and mention it in the config.json which will be used by the nginx proxy-manager app.
+4. Please adjust service port numbers according to availability. Currenlty using 30006:80, 30007:81, 30008:443
+5. Deploy nginx proxy manager as following.
+   kubectl create -f proxy-manager.yaml -n gitlab 
+6. For more detailed explaination please follow the below article which will be more clear.
+   https://asperti.com/en/docker-registry

@@ -1,0 +1,13 @@
+FROM node:10
+
+WORKDIR /home/pradeepadm/scullog
+
+# Installing scullog module
+RUN npm install -g scullog
+
+# run on  0.0.0.0
+RUN sed -i -e "s*127.0.0.1*0.0.0.0*g"  /usr/local/lib/node_modules/scullog/server/index.js
+
+EXPOSE 8080
+
+CMD ["scullog" , "-d", "/home/pradeepadm/scullog/"]

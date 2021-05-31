@@ -1,0 +1,55 @@
+version: '2'
+ 
+services:
+  registry:
+    image: registry:2
+    expose:
+      - 5000
+    volumes:
+      - /srv/docker/registry/data:/var/lib/registry/
+      - /srv/docker/certs:/certs:ro
+    networks:
+      - backend
+    depends_on:
+      - auth
+    restart: always
+    environment:
+      - REGISTRY_HTTP_ADDR=0.0.0.0:5000
+      - REGISTRY_AUTH=token
+      - REGISTRY_AUTH_TOKEN_REALM=https://docker.example.com/auth
+      - REGISTRY_AUTH_TOKEN_SERVICE="The Docker Registry"
+      - REGISTRY_AUTH_TOKEN_ISSUER="The Auth Service"
+      - REGISTRY_AUTH_TOKEN_ROOTCERTBUNDLE=/certs/registry.crt
+ 
+  auth:
+    image: cesanta/docker_auth
+    networks:
+      - backend
+    expose:
+      - 5001
+    volumes:
+      - /srv/docker/auth/config:/config:ro
+      - /srv/docker/auth/logs:/logs
+      - /srv/docker/certs:/certs:ro
+    command: /config/auth_config.yml
+    restart: always
+ 
+  webui:
+    image: klausmeyer/docker-registry-browser
+    expose:
+      - 8080
+    networks:
+      - backend
+    restart: always
+    depends_on:
+      - registry
+    environment:
+      - DOCKER_REGISTRY_URL=https://docker.example.com
+      - TOKEN_AUTH_USER=webuser
+      - TOKEN_AUTH_PASSWORD=Cemur6oosh5ahphupu
+      - ENABLE_DELETE_IMAGES=false
+ 
+networks:
+  backend:
+    external:
+      name: proxy-manager_backend

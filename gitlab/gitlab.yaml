@@ -1,0 +1,113 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    app: gitlab
+  name: gitlab
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gitlab
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: gitlab
+    spec:
+      containers:
+      - image: gitlab/gitlab-ce:latest
+        imagePullPolicy: IfNotPresent
+        name: gitlab
+        ports:
+        - containerPort: 80
+          name: http
+          protocol: TCP
+        - containerPort: 9168
+          name: monitor
+          protocol: TCP
+        - containerPort: 22
+          name: ssh
+          protocol: TCP
+        resources:
+          limits:
+            cpu: "5"
+            memory: 7Gi
+          requests:
+            cpu: "3"
+            memory: 5Gi
+        volumeMounts:
+        - mountPath: /etc/gitlab
+          name: config
+        - mountPath: /var/log/gitlab
+          name: logs
+        - mountPath: /var/opt/gitlab
+          name: data
+      - image: gitlab/gitlab-runner:latest
+        imagePullPolicy: IfNotPresent
+        name: gitlab-runner
+        resources:
+          limits:
+            cpu: "2"
+            memory: 3Gi
+          requests:
+            cpu: "1"
+            memory: 2Gi
+        volumeMounts:
+        - mountPath: /etc/gitlab-runner
+          name: config
+        - mountPath: /var/run/docker.sock
+          name: dockerr
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+#      tolerations:
+#      - effect: NoSchedule
+#        key: node-role.kubernetes.io/master
+#        operator: Equal
+#        value: value
+      volumes:
+      - hostPath:
+          path: /tmp/gitlab/config
+        name: config
+      - hostPath:
+          path: /tmp/gitlab/logs
+        name: logs
+      - hostPath:
+          path: /tmp/gitlab/data
+        name: data
+      - hostPath:
+          path: /var/run/docker.sock
+        name: dockerr
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gitlab
+spec:
+  ports:
+  - name: http
+    port: 30002
+    protocol: TCP
+    targetPort: 80
+  selector:
+    app: gitlab
+  type: LoadBalancer
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  annotations:
+    layer: L4
+    protocol: tcp
+  name: gitlab
+spec:
+  backend:
+    serviceName: gitlab
+    servicePort: 30002

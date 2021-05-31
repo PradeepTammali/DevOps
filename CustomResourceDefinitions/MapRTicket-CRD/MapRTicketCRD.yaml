@@ -1,0 +1,49 @@
+# Deprecated in v1.16 in favor of apiextensions.k8s.io/v1
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  # name must match the spec fields below, and be in the form: <plural>.<group>
+  name: maprticket.pradeep.k8s.io
+spec:
+  # group name to use for REST API: /apis/<group>/<version>
+  group: pradeep.k8s.io
+  # list of versions supported by this CustomResourceDefinition
+  versions:
+    - name: v1alpha1
+      # Each version can be enabled/disabled by Served flag.
+      served: true
+      # One and only one version must be marked as the storage version.
+      storage: true
+  # either Namespaced or Cluster
+  scope: Namespaced
+  names:
+    # plural name to be used in the URL: /apis/<group>/<version>/<plural>
+    plural: maprtickets 
+    # singular name to be used as an alias on the CLI and for display
+    singular: maprticket
+    # kind is normally the CamelCased singular type. Your resource manifests use this.
+    kind: MapRTicket
+    # shortNames allow shorter string to match your resource on the CLI
+    shortNames:
+    - mt
+    listkind: MapRTicketList
+  validation:
+    openAPIV3Schema:
+      required: ["spec"]
+      properties:
+        spec:
+          required: ["UserID", "UserName", "GroupID", "GroupName", "Password"]
+          properties:
+            UserID:
+              type: integer
+              pattern: ^[0-9]{7}$
+            UserName:
+              type: string
+            GroupID:
+              type: integer
+              pattern: ^[0-9]{1,10}$
+            GroupName:
+              type: string 
+            Password:
+              type: string
+

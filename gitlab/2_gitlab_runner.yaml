@@ -1,0 +1,41 @@
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: gitlab-runner
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: gitlab-runner
+  template:
+    metadata:
+      labels:
+        name: gitlab-runner
+    spec:
+#      securityContext:
+#        runAsUser: 999
+#        runAsGroup: 999
+      containers:
+      - image: gitlab/gitlab-runner:latest
+        imagePullPolicy: IfNotPresent
+        name: gitlab-runner
+        resources:
+          requests:
+            cpu: '1'
+            memory: 1Gi
+          limits:
+            cpu: '1'
+            memory: 2Gi
+        volumeMounts:
+        - name: config
+          mountPath: /etc/gitlab-runner
+        - name: dsock
+          mountPath: /var/run/docker.sock
+      volumes:
+        - hostPath:
+            path: /tmp/gitlab/config
+          name: config
+        - hostPath:
+            path: /var/run/docker.sock
+          name: dsock

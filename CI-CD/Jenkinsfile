@@ -1,0 +1,30 @@
+pipeline {
+    agent {
+        label 'jenkins-k8s-slave'
+    }
+
+    environment { 
+        K8S_VERSION = '1.16'
+        NAMESPACE = 'pradeep'
+        DOCKER_REG = 'https://docker.registry.com:30100'
+    }
+
+    stages {
+        stage('Build') {
+            steps {
+                echo "Building docker images and pushing to the registry ${env.DOCKER_REG}.."
+                script {
+                    docker.withRegistry("${env.DOCKER_REG}") {
+                        def apiImage = docker.build("${env.JOB_NAME}:b${env.BUILD_ID}")
+                        apiImage.push()
+                    }
+                }
+            }
+        }
+        stage('Deploy') {
+            steps {
+                sh "kubectl -n ${env.NAMESPACE} get deploy"
+            }
+        }
+    }
+}

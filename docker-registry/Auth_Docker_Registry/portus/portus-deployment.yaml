@@ -1,0 +1,112 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose convert
+    kompose.version: 1.16.0 (0c01309)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: portus
+  name: portus
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        io.kompose.service: portus
+    spec:
+      containers:
+      - env:
+        - name: PORTUS_DB_DATABASE
+          value: portus_production
+        - name: PORTUS_DB_HOST
+          value: db
+        - name: PORTUS_DB_PASSWORD
+          value: aFSxSWyThGYirYK7
+        - name: PORTUS_DB_POOL
+          value: "5"
+        - name: PORTUS_KEY_PATH
+          value: /certs/server.key
+        - name: PORTUS_MACHINE_FQDN_VALUE
+          value: "docker.registry.com"
+        - name: PORTUS_PASSWORD
+          value: password
+        - name: PORTUS_PUMA_TLS_CERT
+          value: /certs/server.crt
+        - name: PORTUS_PUMA_TLS_KEY
+          value: /certs/server.key
+        - name: PORTUS_SECRET_KEY_BASE
+          value: b494a25faa8d22e430e843e220e424e10ac84d2ce0e64231f5b636d21251eb6d267adb042ad5884cbff0f3891bcf911bdf8abb3ce719849ccda9a4889249e5c2
+        - name: RAILS_SERVE_STATIC_FILES
+          value: "true"
+        - name: PORTUS_BACKGROUND
+          value: "true"
+        - name: PORTUS_CHECK_SSL_USAGE_ENABLED
+          value: "false"
+        - name: CCONFIG_PREFIX
+          value: PORTUS
+        image: opensuse/portus:2.4.3
+#        image: opensuse/portus:head
+#        image: opensuse/portus:2.3
+        name: portus
+        ports:
+        - containerPort: 3000
+        resources: {}
+        volumeMounts:
+        - name: registry-cert-cm
+          mountPath: /certs/server.crt
+          subPath: server.crt
+          readOnly: true
+        - name: registry-key-cm
+          mountPath: /certs/server.key
+          subPath: server.key
+          readOnly: true
+        - name: trust-chain-pem-cm
+          mountPath: /certs/trust_chain.pem
+          subPath: trust_chain.pem
+          readOnly: true
+#        - mountPath: /srv/Portus/public
+#          name: portus-static
+      restartPolicy: Always
+      volumes:
+#      - name: portus-static
+#        hostPath:
+#          path: /tmp/portus/data
+      - name: registry-cert-cm
+        configMap:
+          name: registry-crt
+      - name: registry-key-cm
+        configMap:
+          name: registry-key
+      - name: trust-chain-pem-cm
+        configMap:
+          name: trust-chain-pem
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: portus
+spec:
+  ports:
+  - name: http
+    port: 30010
+    protocol: TCP
+    targetPort: 3000
+  selector:
+    io.kompose.service: portus
+  type: LoadBalancer
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  annotations:
+    layer: L4
+    protocol: tcp
+  name: portus
+spec:
+  backend:
+    serviceName: portus
+    servicePort: 30010

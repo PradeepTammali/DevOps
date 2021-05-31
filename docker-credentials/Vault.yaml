@@ -1,0 +1,67 @@
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    app: vault
+  name: vault
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: vault
+  template:
+    metadata:
+      labels:
+        app: vault
+    spec:
+      containers:
+      - image: vault:1.3.3
+        imagePullPolicy: IfNotPresent
+        securityContext:
+          capabilities:
+            add:
+            - IPC_LOCK
+        name: vault
+        ports:
+        - containerPort: 8888
+          name: http
+          protocol: TCP
+        env:
+        - name: VAULT_DEV_ROOT_TOKEN_ID
+          value: "token"
+        - name: VAULT_DEV_LISTEN_ADDRESS
+          value: "0.0.0.0:8888"
+#        resources:
+#          limits:
+#            cpu: "1"
+#            memory: 1Gi
+#          requests:
+#            cpu: "0.5"
+#            memory: 0.5Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: vault
+spec:
+  ports:
+  - name: http
+    port: 30012
+    protocol: TCP
+    targetPort: 8888
+  selector:
+    app: vault
+  type: LoadBalancer
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  annotations:
+    layer: L4
+    protocol: tcp
+  name: vault
+spec:
+  backend:
+    serviceName: vault
+    servicePort: 30012

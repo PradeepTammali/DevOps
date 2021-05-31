@@ -1,0 +1,20 @@
+apiVersion: v1
+clusters:
+- cluster:
+    insecure-skip-tls-verify: true
+    server: https://10.137.110.58:6443
+  name: pradeepdev-cluster
+contexts:
+- context:
+    cluster: pradeepdev-cluster
+    namespace: pradeep-test-env
+    user: pradeepdev
+  name: pradeepdev-context
+current-context: pradeepdev-context
+kind: Config
+preferences: {}
+users:
+- name: pradeepdev
+  user:
+    client-certificate: context/pradeepdev/pradeepdev.crt
+    client-key: context/pradeepdev/pradeepdev.key

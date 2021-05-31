@@ -1,0 +1,80 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jenkins
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: jenkins
+  template:
+    metadata:
+      labels:
+        app: jenkins
+    spec:
+      containers:
+      - name: jenkins
+#        image: jenkins/jenkins:lts
+        image: docker.registry.com:30100/jenkins:v1
+        lifecycle:
+          postStart:
+            exec:
+              command: ["/bin/sh", "-c", "git config  --global  http.sslVerify false"]
+        env:
+        - name: JENKINS_HOME
+          value: "/data/Jenkins"
+        - name: DOCKER_HOST
+          value: tcp://dind:2375
+        ports:
+          - name: http-port
+            containerPort: 8080
+          - name: jnlp-port
+            containerPort: 50000
+        volumeMounts:
+          - name: jenkins-vol
+            mountPath: /data
+      volumes:
+      - persistentVolumeClaim:
+          claimName: "ci-cd"
+        name: jenkins-vol
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: jenkins-jnlp
+spec:
+  ports:
+  - name: http
+    port: 50000
+    protocol: TCP
+    targetPort: 50000
+  selector:
+    app: jenkins
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: jenkins
+spec:
+  ports:
+  - name: http
+    port: 30101
+    protocol: TCP
+    targetPort: 8080
+  selector:
+    app: jenkins
+  type: LoadBalancer
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  annotations:
+    layer: L4
+    protocol: tcp
+  name: jenkins
+spec:
+  backend:
+    serviceName: jenkins
+    servicePort: 30101

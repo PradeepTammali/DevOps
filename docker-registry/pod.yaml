@@ -1,0 +1,23 @@
+---
+kind: Pod
+apiVersion: v1
+metadata:
+  name: test-dynamic-provisioner
+  namespace: gitlab
+spec:
+  containers:
+  - name: busybox
+    image: busybox
+    args:
+    - sleep
+    - "1000000"
+    imagePullPolicy: Always
+    volumeMounts:
+      - name: registry-key-name
+        mountPath: "/opt/certs/server.key"
+        subPath: "server.key"
+  restartPolicy: "Never"
+  volumes:
+    - name: registry-key-name
+      configMap:
+        name: registry-key

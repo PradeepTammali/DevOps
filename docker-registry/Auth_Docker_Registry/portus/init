@@ -1,0 +1,8 @@
+#!/bin/sh
+
+set -x
+
+cp /certs/server.crt /usr/local/share/ca-certificates
+update-ca-certificates
+registry serve /etc/docker/registry/config.yml
+

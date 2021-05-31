@@ -1,0 +1,31 @@
+server:
+  addr: ":5001"
+ 
+token:
+  issuer: "http://137.58.180.216:30005/auth/realms/docker-registry"  # Must match issuer in the Registry config.
+  expiration: 900
+  certificate: "/certs/server.crt"
+  key: "/certs/server.key"
+users:
+  # Password is specified as a BCrypt hash. Use `htpasswd -nB USERNAME` to generate.
+  "god":
+    password: "$2y$05$dfgB/wZJwB0jrbhd0g804OT5zrqQnbfcsGqYnGnChnomSrrY3fisq"
+  "webuser":
+    password: "$2y$05$GCRVqbDHv0UkWX0LzKeTNeZhZ756uiVHz8D7xlOirL9z8S75tLNye"
+  "": {}
+
+acl:
+  - actions: ['*']
+    match: {account: '', name: catalog, type: registry}
+ 
+  - actions: ['*']
+    match: {account: 'webuser', name: catalog, type: registry}
+ 
+  - match: {account: "gregistryod"}
+    actions: ["*"]
+ 
+  - match: {account: "ptammali"}
+    actions: ["pull"]
+ 
+  - match: {account: ""}
+    actions: ["pull"]

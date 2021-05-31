@@ -1,0 +1,17 @@
+[req]
+distinguished_name = req_distinguished_name
+x509_extensions = v3_req
+prompt = no
+[req_distinguished_name]
+C = SE
+ST = Stockholm
+L = Kista
+O = Ericsson
+OU = IT
+CN = 137.58.180.216
+[v3_req]
+keyUsage = keyEncipherment, dataEncipherment
+extendedKeyUsage = serverAuth
+subjectAltName = @alt_names
+[alt_names]
+DNS.1 = 137.58.180.216
