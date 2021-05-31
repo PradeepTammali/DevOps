@@ -1,0 +1,12 @@
+apiVersion: nsc.k8s.io/v1alpha1
+kind: MapRTicket
+metadata:
+  name: maprticket-sample
+spec:
+  # Add fields here
+  groupID: 
+  groupName: 
+  userID: 
+  userName: 
+  password: 
+  createSecret: false
