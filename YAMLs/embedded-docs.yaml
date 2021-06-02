@@ -1,0 +1,62 @@
+from pprint import pprint
+from mongoalchemy.session import Session
+from mongoalchemy.document import Document, Index
+from mongoalchemy.fields import *
+from values import *
+from flask import Flask
+from flask_mongoalchemy import MongoAlchemy
+app = Flask(__name__)
+from myconfig import *
+app.config['MONGOALCHEMY_DATABASE'] = 'testing_db'
+app.config['MONGOALCHEMY_SERVER']= mongo_alchemy_server
+app.config['MONGOALCHEMY_OPTIONS']= 'ssl=true&ssl_certfile=/vault/secrets/mongo.pem'
+app.config['MONGOALCHEMY_REPLICA_SET'] = mongo_replica_set
+app.config['MONGOALCHEMY_USER'] = mongo_username
+app.config['MONGOALCHEMY_PASSWORD'] = mongo_password
+db = MongoAlchemy(app)
+import datetime,json
+from ast import literal_eval
+
+def main():
+    class Address(db.Document):
+        street_address = StringField()
+        city = StringField()
+        state_province = StringField()
+        country = StringField()
+
+    class User(db.Document):
+
+        name_index = Index().ascending('name').unique()
+
+        name = StringField()
+        email = StringField()
+
+        address = DocumentField(Address)
+
+        def __str__(self):
+            return '%s (%s)' % (self.name, self.email)
+
+
+    with Session.connect('mongoalchemy') as s:
+        def print_all():
+            for u in s.query(User).filter(User.address.country == 'USA' ):
+                print(u)
+
+        s.clear_collection(User)
+
+        a = Address(street_address='123 4th ave', city='NY', state_province='NY', country='USA')
+        u = User(name='jeff', email='jeff@qcircles.net', address=a)
+        s.save(u)
+        print(u.mongo_id)
+
+        query = User.address.country == 'USA'
+
+        print_all()
+
+        update = s.query(User).filter(User.name > 'ivan', User.name < 'katie' ).set(User.email, 'jeff2@qcircles.net')
+        update.execute()
+        print_all()
+
+
+if __name__ == '__main__':
+    main()

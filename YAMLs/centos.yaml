@@ -1,0 +1,44 @@
+apiVersion: apps/v1 
+kind: StatefulSet
+metadata:
+  name: centos
+spec:
+  selector:
+    matchLabels:
+      app: centos
+  serviceName: centos
+  replicas: 1 
+  template:
+    metadata:
+      labels:
+        app: centos
+    spec:
+      containers:
+      - name: centos
+        #image: centos:7
+        image: ubuntu:18.04
+        args:
+        - sleep
+        - "100000000000"
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 22
+#        resources: 
+#          limits:
+#            cpu: 200m
+#            memory: 200Mi
+#          requests:
+#            cpu: 200m
+#            memory: 200Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: centos
+spec:
+  type: LoadBalancer
+  ports:
+  - port: 30000
+    targetPort: 22
+  selector:
+    app: centos

@@ -1,0 +1,276 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: filebeat-config
+  labels:
+    k8s-app: filebeat
+data:
+  filebeat.yml: |-
+    #setup.dashboards.enabled: true
+    #setup.template.enabled: true
+    #setup.template.settings:
+      #index.number_of_shards: 1
+    #setup.kibana.host: 'kibana:30125'
+    #setup.kibana.username: 'elastic'
+    #setup.kibana.password: 'test1234'
+    filebeat.inputs:
+    - type: log
+      paths:
+        - /pradeep/logs/test/api_access*.log
+        - /pradeep/logs/test/api_error*.log
+        - /pradeep/logs/api_gaccess*.log
+        - /pradeep/logs/api_gerror*.log
+      exclude_lines: ['^None$']
+      tags: ["pradeep", "apigateway"]
+      fields:
+        component: pradeep
+        service: apigateway
+      fields_under_root: true
+      multiline.type: pattern
+      multiline.match: after
+      multiline.negate: true
+      multiline.pattern: '^\[*[0-9]{4}-[0-9]{2}-[0-9]{2}|^None$'
+    - type: log
+      paths:
+        - /pradeep/logs/test/im_access*.log
+        - /pradeep/logs/test/im_error*.log
+        - /pradeep/logs/im_gaccess*.log
+        - /pradeep/logs/im_gerror*.log
+      exclude_lines: ['^None$']
+      tags: ["pradeep", "identitymanager"]
+      fields:
+        component: pradeep
+        service: identitymanager
+      fields_under_root: true
+      multiline.type: pattern
+      multiline.match: after
+      multiline.negate: true
+      multiline.pattern: '^\[*[0-9]{4}-[0-9]{2}-[0-9]{2}|^None$'
+    - type: log
+      paths:
+        - /pradeep/logs/test/mapr_access*.log
+        - /pradeep/logs/test/mapr_error*.log
+        - /pradeep/logs/mapr_gaccess*.log
+        - /pradeep/logs/mapr_gerror*.log
+      exclude_lines: ['^None$']
+      tags: ["pradeep", "maprmanager"]
+      fields:
+        component: pradeep
+        service: maprmanager
+      fields_under_root: true
+      multiline.type: pattern
+      multiline.match: after
+      multiline.negate: true
+      multiline.pattern: '^\[*[0-9]{4}-[0-9]{2}-[0-9]{2}|^None$'
+    - type: log
+      paths:
+        - /pradeep/logs/test/monitoring_access*.log
+        - /pradeep/logs/test/monitoring_error*.log
+        - /pradeep/logs/monitoring_gaccess*.log
+        - /pradeep/logs/monitoring_gerror*.log
+      exclude_lines: ['^None$']
+      tags: ["pradeep", "monitoringmanager"]
+      fields:
+        component: pradeep
+        service: monitoringmanager
+      fields_under_root: true
+      multiline.type: pattern
+      multiline.match: after
+      multiline.negate: true
+      multiline.pattern: '^\[*[0-9]{4}-[0-9]{2}-[0-9]{2}|^None$'
+    - type: log
+      paths:
+        - /pradeep/logs/test/observability_access*.log
+        - /pradeep/logs/test/observability_error*.log
+        - /pradeep/logs/observability_gaccess*.log
+        - /pradeep/logs/observability_gerror*.log
+      exclude_lines: ['^None$']
+      tags: ["pradeep", "observabilitymanager"]
+      fields:
+        component: pradeep
+        service: observabilitymanager
+      fields_under_root: true
+      multiline.type: pattern
+      multiline.match: after
+      multiline.negate: true
+      multiline.pattern: '^\[*[0-9]{4}-[0-9]{2}-[0-9]{2}|^None$'
+    - type: log
+      paths:
+        - /pradeep/logs/test/orch_access*.log
+        - /pradeep/logs/test/orch_error*.log
+        - /pradeep/logs/orch_gaccess*.log
+        - /pradeep/logs/orch_gerror*.log
+        - /pradeep/logs/test/mapr_ticket*.log
+      exclude_lines: ['^None$']
+      tags: ["pradeep", "orchestrator"]
+      fields:
+        component: pradeep
+        service: orchestrator
+      fields_under_root: true
+      multiline.type: pattern
+      multiline.match: after
+      multiline.negate: true
+      multiline.pattern: '^\[*[0-9]{4}-[0-9]{2}-[0-9]{2}|^None$'
+    - type: log
+      paths:
+        - /pradeep/logs/test/celery_deployment*.log
+        - /pradeep/logs/test/mapr_pod_delete*.log
+        - /pradeep/logs/test/pv*.log
+        - /pradeep/logs/test/sc_quota*.log
+        - /pradeep/logs/test/update_deployment_status*.log
+      exclude_files: ["celery.log", "celerybeat-schedule"]
+      exclude_lines: ['^None$']
+      tags: ["pradeep", "orchestrator", "celery"]
+      fields:
+        component: pradeep
+        service: orchestrator
+        server: celery
+      fields_under_root: true
+      multiline.type: pattern
+      multiline.match: after
+      multiline.negate: true
+      multiline.pattern: '^\[*[0-9]{4}-[0-9]{2}-[0-9]{2}|^None$'
+    - type: log
+      paths:
+        - /pradeep/logs/test/service_access*.log
+        - /pradeep/logs/test/service_error*.log
+        - /pradeep/logs/service_gaccess*.log
+        - /pradeep/logs/service_gerror*.log
+      exclude_lines: ['^None$']
+      tags: ["pradeep", "servicemanager"]
+      fields:
+        component: pradeep
+        service: servicemanager
+      fields_under_root: true
+      multiline.type: pattern
+      multiline.match: after
+      multiline.negate: true
+      multiline.pattern: '^\[*[0-9]{4}-[0-9]{2}-[0-9]{2}|^None$'
+    - type: log
+      paths:
+        - /pradeep/logs/test/usage_access*.log
+        - /pradeep/logs/test/usage_error*.log
+        - /pradeep/logs/usage_gaccess*.log
+        - /pradeep/logs/usage_gerror*.log
+      exclude_lines: ['^None$']
+      tags: ["pradeep", "usagemanager"]
+      fields:
+        component: pradeep
+        service: usagemanager
+      fields_under_root: true
+      multiline.type: pattern
+      multiline.match: after
+      multiline.negate: true
+      multiline.pattern: '^\[*[0-9]{4}-[0-9]{2}-[0-9]{2}|^None$'
+    - type: log
+      paths:
+        - /pradeep/logs/test/webhook_access*.log
+        - /pradeep/logs/test/webhook_error*.log
+        - /pradeep/logs/webhook_gaccess*.log
+        - /pradeep/logs/webhook_gerror*.log
+      exclude_lines: ['^None$']
+      tags: ["pradeep", "webhook"]
+      fields:
+        component: pradeep
+        service: webhook
+      fields_under_root: true
+      multiline.type: pattern
+      multiline.match: after
+      multiline.negate: true
+      multiline.pattern: '^\[*[0-9]{4}-[0-9]{2}-[0-9]{2}|^None$'
+    processors:
+      - add_tags:
+          tags: [tallin, production]
+          target: "environment"
+      - drop_fields:
+          fields: ["ecs", "host", "agent"]
+    output.logstash:
+      hosts: ['logstash.elastic-system.svc.cluster.local:5044']
+      #username: "elastic"
+      #password: "test1234"
+    #output.console:
+      #pretty: true
+    #output.file:
+      #path: "/pradeep/logs/filebeat"
+      #number_of_files: 500
+      #filename: filebeat-out
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: filebeat
+  labels:
+    k8s-app: filebeat
+spec:
+  selector:
+    matchLabels:
+      k8s-app: filebeat
+  template:
+    metadata:
+      labels:
+        k8s-app: filebeat
+    spec:
+      serviceAccountName: filebeat
+      terminationGracePeriodSeconds: 30
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: pradeep
+                operator: In
+                values:
+                - mgmt
+      containers:
+      - name: filebeat
+        image: docker.elastic.co/beats/filebeat:7.3.2
+        args: [
+          "-c", "/etc/filebeat.yml",
+          "--path.data", "/pradeep/logs/filebeat/data",
+          "-e",
+        ]
+        env:
+        - name: ELASTICSEARCH_HOST
+          value: elasticsearch
+        - name: ELASTICSEARCH_PORT
+          value: "9200"
+        - name: ELASTICSEARCH_USERNAME
+          value: elastic
+        - name: ELASTICSEARCH_PASSWORD
+          value: elknsc123
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        securityContext:
+          runAsUser: 0
+        resources:
+          limits:
+            memory: 500Mi
+            cpu: 250m
+          requests:
+            cpu: 250m
+            memory: 500Mi
+        volumeMounts:
+        - name: config
+          mountPath: /etc/filebeat.yml
+          readOnly: true
+          subPath: filebeat.yml
+        - mountPath: "/pradeep/logs/"
+          name: pradeeplogs
+      volumes:
+      - name: config
+        configMap:
+          defaultMode: 0600
+          name: filebeat-config
+      - persistentVolumeClaim:
+          claimName: "pradeep-logs"
+        name: pradeeplogs
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: filebeat
+  labels:
+    k8s-app: filebeat

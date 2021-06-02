@@ -1,0 +1,41 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: test
+  template:
+    metadata:
+      labels:
+        app: test
+    spec:
+      containers:
+      - name: busybox
+        image: busybox
+        command: ["/bin/sh"]
+        args: ["-c", "while true; do sleep 10; done"]
+        imagePullPolicy: Always
+        resources:
+              requests:
+                cpu: '0.1'
+                memory: 100Mi
+              limits:
+                cpu: '0.1'
+                memory: 100Mi
+      - name: testpod
+        image: busybox
+        command: ["/bin/sh"]
+        args: ["-c", "while true; do sleep 10; done"]
+        imagePullPolicy: Always
+        resources:
+              requests:
+                cpu: '0.1'
+                memory: 100Mi
+              limits:
+                cpu: '0.1'
+                memory: 100Mi
+      restartPolicy: "Always"
